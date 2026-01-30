@@ -16,40 +16,6 @@ This repo packages **OpenClaw** for Railway with a small **/setup** web wizard s
 - During setup, the wrapper runs `openclaw onboard --non-interactive ...` inside the container, writes state to the volume, and then starts the gateway.
 - After setup, **`/` is OpenClaw**. The wrapper reverse-proxies all traffic (including WebSockets) to the local gateway process.
 
-## Railway deploy instructions (what you'll publish as a Template)
-
-In Railway Template Composer:
-
-1. Create a new template from this GitHub repo.
-2. Add a **Volume** mounted at `/data`.
-3. Set the following variables:
-
-Required:
-
-- `SETUP_PASSWORD` — user-provided password to access `/setup`
-
-Recommended:
-
-- `OPENCLAW_STATE_DIR=/data/.openclaw`
-- `OPENCLAW_WORKSPACE_DIR=/data/workspace`
-
-Optional:
-
-- `OPENCLAW_GATEWAY_TOKEN` — if not set, the wrapper generates one (not ideal). In a template, set it using a generated secret.
-
-Notes:
-
-- This template pins OpenClaw to a known-good version by default via Docker build arg `OPENCLAW_VERSION`.
-
-4. Enable **Public Networking** (HTTP). Railway will assign a domain.
-5. Deploy.
-
-Then:
-
-- Visit `https://<your-app>.up.railway.app/setup`
-- Complete setup
-- Visit `https://<your-app>.up.railway.app/` and `/openclaw`
-
 ## Getting chat tokens (so you don't have to scramble)
 
 ### Telegram bot token
