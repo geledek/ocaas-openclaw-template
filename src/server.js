@@ -114,24 +114,29 @@ function sleep(ms) {
 }
 
 async function waitForGatewayReady(opts = {}) {
-  const timeoutMs = opts.timeoutMs ?? 20_000;
+  const timeoutMs = opts.timeoutMs ?? parseInt(process.env.GATEWAY_READY_TIMEOUT_MS || "60000", 10);
   const start = Date.now();
-  const endpoints = ["/openclaw", "/openclaw", "/", "/health"];
-  
+  const endpoints = ["/openclaw", "/", "/health"];
+
   while (Date.now() - start < timeoutMs) {
+    // Early exit if the gateway process has already died
+    if (!gatewayProc) {
+      console.error(`[gateway] process exited before becoming ready`);
+      return false;
+    }
     for (const endpoint of endpoints) {
       try {
         const res = await fetch(`${GATEWAY_TARGET}${endpoint}`, { method: "GET" });
         // Any HTTP response means the port is open.
         if (res) {
-          console.log(`[gateway] ready at ${endpoint}`);
+          console.log(`[gateway] ready at ${endpoint} (took ${Date.now() - start}ms)`);
           return true;
         }
       } catch (err) {
         // not ready, try next endpoint
       }
     }
-    await sleep(250);
+    await sleep(500);
   }
   console.error(`[gateway] failed to become ready after ${timeoutMs}ms`);
   return false;
@@ -232,7 +237,7 @@ async function ensureGatewayRunning() {
   if (!gatewayStarting) {
     gatewayStarting = (async () => {
       await startGateway();
-      const ready = await waitForGatewayReady({ timeoutMs: 20_000 });
+      const ready = await waitForGatewayReady({ timeoutMs: parseInt(process.env.GATEWAY_READY_TIMEOUT_MS || "60000", 10) });
       if (!ready) {
         throw new Error("Gateway did not become ready in time");
       }
@@ -269,7 +274,7 @@ async function restartGateway() {
   }
 
   // Give processes time to exit and release the port
-  await sleep(1500);
+  await sleep(3000);
 
   return ensureGatewayRunning();
 }
